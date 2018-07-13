@@ -1,0 +1,8 @@
+build/
+
+# Use wildcards as well
+*~
+*.swp
+*.swn
+*.swo
+*.launch
