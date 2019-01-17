@@ -42,15 +42,18 @@ int main()
 
   sBodyDefs* pBodyDefs = NULL;
   sFrameOfData* FrameofData = NULL;
-  
+   sBodyDef* pBody{NULL};
+
   std::vector<int> bodyMarkers;
+     int nBytes;
+void *pResponse;
 
   int retval = RC_Okay;
 
   Cortex_SetVerbosityLevel(VL_Info);
   Cortex_SetErrorMsgHandlerFunc(MyErrorMsgHandler);
   
-  retval = Cortex_Initialize("10.1.1.180", "10.1.1.100");
+  retval = Cortex_Initialize("10.1.1.200", "10.1.1.190");
   if (retval != RC_Okay)
   {
     printf("Error: Unable to initialize ethernet communication\n");
@@ -58,9 +61,7 @@ int main()
     return 1;
   }
   
-  // cortex frame rate //
-  void *pResponse;
-  int nBytes;
+          // cortex frame rate //
   printf("\n****** Cortex_FrameRate ******\n");
   retval = Cortex_Request("GetContextFrameRate", &pResponse, &nBytes);
   if (retval != RC_Okay)
@@ -69,103 +70,28 @@ int main()
   printf("ContextFrameRate = %3.1f Hz\n", *contextFrameRate);
 
 
-  // get name of bodies being tracked and its set of markers //
   printf("\n****** Cortex_GetBodyDefs ******\n");
   pBodyDefs = Cortex_GetBodyDefs();
-
-  if (pBodyDefs == NULL) 
+  if (pBodyDefs == NULL)
+    { printf("Failed to get body defs\n"); } 
+  else
   {
-    printf("Failed to get body defs\n");
-  } 
-  else 
-  { 
-    cout << "total no of bodies tracked " << pBodyDefs->nBodyDefs << endl;
-    for(int iBody=0; iBody<pBodyDefs->nBodyDefs; iBody++)
+    int totalBodies = pBodyDefs->nBodyDefs;
+    cout << "total no of bodies tracked " << totalBodies << endl;
+    for(int iBody=0; iBody<totalBodies; iBody++)
     {
       bodyMarkers.push_back(pBodyDefs->BodyDefs[iBody].nMarkers);
-      sBodyDef* pBody = &pBodyDefs->BodyDefs[iBody];
+      pBody = &pBodyDefs->BodyDefs[iBody];
       cout << "number of markers defined in body " << iBody+1 << " (\"" << pBody->szName << "\") : " << bodyMarkers.at(iBody) << endl;    
-            
-      for (int iMarker=0 ; iMarker<pBody->nMarkers; iMarker++)
-      {
-        cout << iMarker+1 << " " << pBody->szMarkerNames[iMarker] << endl;
-      }
 
+      for (int iMarker=0 ; iMarker<pBody->nMarkers; iMarker++)
+        { cout << iMarker << " " << pBody->szMarkerNames[iMarker] << endl; }
     }
   }
- 
-
   
-  // live plot //
-  plot p;
-  vector<double> xm, xm1, xm2;
 
+  printf("\n*** start live mode ***\n");
+  Cortex_Request("LiveMode", &pResponse, &nBytes);
 
-
-  vectorXd;
-
-
-
-  printf("\n*** Starting live mode ***\n");
-  retval = Cortex_Request("LiveMode", &pResponse, &nBytes);
-  double del = 0;  
-
-  while(1)
-  {
-    FrameofData =  Cortex_GetCurrentFrame();  // Can POLL for the current frame. 
-
-    // cout << "time delay from camera " << FrameofData->fDelay <<  "; cortex frame " << FrameofData->iFrame << endl;    
-    
-    del+=FrameofData->fDelay;
-
-    // recordingStat = FrameofData->RecordingStatus.bRecording;
-    // if(recordingStat==0)
-    // {  
-    //     retval = Cortex_Request("StartRecording", &pResponse, &nBytes);
-    //     if (retval != RC_Okay)
-    //     printf("ERROR, not recording \n");
-    // }
-
-    for(int b = 0; b<FrameofData->nBodies; b++)
-    {
-      for(int m = 0; m<bodyMarkers.at(b); m++)
-      {
-        // cout << "body1 markers == " << (m+1) << endl <<
-        //               " X: " << FrameofData->BodyData[b].Markers[m][0] << endl <<
-        //               " Y: " << FrameofData->BodyData[b].Markers[m][1] << endl <<
-        //               " Z: " << FrameofData->BodyData[b].Markers[m][2] << endl;
-
-    // cout << FrameofData->BodyData[b].Markers[1][0] - FrameofData->BodyData[b].Markers[2][0] << endl;
-    
-    xm.push_back(FrameofData->BodyData[b].Markers[1][0] - FrameofData->BodyData[b].Markers[2][0]);
-
-    xm1.push_back(FrameofData->BodyData[b].Markers[1][0]);
-    xm2.push_back(FrameofData->BodyData[b].Markers[3][0]);
-
-
-      }
-    }
-    // cout << "size xm1 " << xm1.size() << endl; 
-    // p.plot_data(xm1,xm2);
-
-    p.plot_data(xm);
-
-    // usleep(1000000);
-    if(FrameofData->iFrame == 1000)
-    {
-      cout << "\ntotal delay from camera " << del << endl;
-      // if(recordingStat!=0)
-      // {        
-      //   printf("\n****** stopped recording ******\n");
-      //   Cortex_Request("StopRecording", &pResponse, &nBytes);
-      // }
-      
-      printf("\n****** Paused live mode ... exiting Cortex ******\n");
-      Cortex_FreeFrame(FrameofData);
-      Cortex_Request("Pause", &pResponse, &nBytes);
-      Cortex_Exit();
-    }
-
-  } 
   return 0;
 }
