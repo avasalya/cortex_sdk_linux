@@ -1,0 +1,13 @@
+/**
+ * @file RTC_Cortex_bridgeService.idl
+ * @brief Services for the data logger interface
+ */
+module OpenHRP
+{
+  interface RTC_Cortex_bridgeService
+  {
+    boolean test1(in string name);
+    boolean test2();
+    void test3(in unsigned long len);
+  };
+};

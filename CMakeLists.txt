@@ -1,21 +1,22 @@
-project(CORTEX_LINUX)
-cmake_minimum_required(VERSION 2.6)
-
-# COMPILER FLAGS (default: Release)
-# use "-DCMAKE_BUILD_TYPE=Debug" in cmake for a Debug-build
-IF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
-   SET(CMAKE_BUILD_TYPE Release)
-ENDIF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
-message(STATUS "Build type is " ${CMAKE_BUILD_TYPE})
-
-# COMPILER FLAGS
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -ggdb")
-
-add_library(cortex_sdk m3x3.cpp cortex_socket.cpp cortex_unpack.cpp cortex.cpp)
+set(comp_sources RTC_Cortex_bridge.cpp RTC_Cortex_bridgeService_impl.cpp)
+set(libs ${OPENHRP_LIBRARIES} hrpsysBaseStub myHrpsysStub)
+include_directories(.)
+include_directories(./Cortex_sdk)
+add_library(RTC_Cortex_bridge SHARED ${comp_sources})
+add_library(cortex_sdk ./Cortex_sdk/m3x3.cpp ./Cortex_sdk/cortex_socket.cpp ./Cortex_sdk/cortex_unpack.cpp ./Cortex_sdk/cortex.cpp)
 target_link_libraries(cortex_sdk pthread m)
 
-add_executable(clienttest clienttest.cpp)
-target_link_libraries(clienttest cortex_sdk)
+target_link_libraries(RTC_Cortex_bridge ${libs})
+set_target_properties(RTC_Cortex_bridge PROPERTIES PREFIX "")
+
+add_executable(RTC_Cortex_bridgeComp RTC_Cortex_bridgeComp.cpp ${comp_sources})
+target_link_libraries(RTC_Cortex_bridgeComp ${libs} cortex_sdk)
+
+set(target RTC_Cortex_bridge RTC_Cortex_bridgeComp)
+
+install(TARGETS ${target}
+  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
+  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+)
+
+
